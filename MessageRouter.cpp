@@ -1,27 +1,30 @@
 #include "MessageRouter.h"
 
+MessageRouter* MessageRouter::instance = NULL;
+
 MessageRouter *MessageRouter::getInstance()
 {
     if(!instance)
-        instance = new Message;
+        instance = new MessageRouter;
     return instance;
+}
+
+void MessageRouter::attach(BullyProcess * newThread)
+{
+    threadPool.push_back(newThread);
 }
 
 MessageRouter::MessageRouter()
 {
-    boost::interprocess::message_queue::remove(QName);
-    m_queue = boost::interprocess::message_queue(boost::interprocess::open_or_create      //only create
-            ,QName                                                                        //name
-            ,1000                                                                         //max message number
-            ,sizeof(Message));                                                            //max message size
+    threadPool.clear();
 }
-
-bool MessageRouter::addNewMessage(Message msg)
+bool MessageRouter::broadCastElectionMessage(ElectionMessage p_election_msg)
 {
-    m_queue.send(&msg, sizeof(msg), 0);
+    for(auto thread : threadPool)
+        thread->updateElection(p_election_msg);
 }
-
-bool MessageRouter::broadCastElectionMessage(ElectionMessage)
+bool MessageRouter::broadAliveMessage(AliveMessage p_alive_msg)
 {
-
+    for(auto thread : threadPool)
+        thread->updateAlive(p_alive_msg);
 }

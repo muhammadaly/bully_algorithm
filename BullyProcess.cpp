@@ -1,5 +1,5 @@
 #include "BullyProcess.h"
-#include "idsgenerator.h"
+#include "IdsGenerator.h"
 #include <iostream>
 #include <time.h>
 
@@ -7,6 +7,8 @@ BullyProcess::BullyProcess():
     StateMachine(ST_MAX_STATES)
 {
     m_Id = IdsGenerator::getInstance()->getUniqueId();
+    m_master_Id = m_Id;
+    m_q_name = "q#" + std::to_string(m_Id);
 }
 
 void BullyProcess::stop()
@@ -27,6 +29,28 @@ void BullyProcess::start()
         TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_IDLE
         TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_ELECTION
         TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+    END_TRANSITION_MAP(NULL)
+}
+
+void BullyProcess::updateElection(ElectionMessage msg)
+{
+    if(msg.m_data > m_master_Id)
+        m_master_Id = msg.m_data;
+    BEGIN_TRANSITION_MAP                                               // - Current State -
+        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_START
+        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_IDLE
+        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_ELECTION
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+    END_TRANSITION_MAP(NULL)
+}
+
+void BullyProcess::updateAlive(AliveMessage msg)
+{
+    BEGIN_TRANSITION_MAP                                           // - Current State -
+        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_START
+        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_IDLE
+        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_ELECTION
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                       // ST_STOP
     END_TRANSITION_MAP(NULL)
 }
 

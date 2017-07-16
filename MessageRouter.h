@@ -3,6 +3,8 @@
 
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include "ElectionMessage.h"
+#include "BullyProcess.h"
+#include "AliveMessage.h"
 
 #define QName "message_pool"
 
@@ -10,14 +12,17 @@ class MessageRouter
 {
 public:
     static MessageRouter* getInstance();
-    bool addNewMessage(Message);
-    bool broadCastElectionMessage(ElectionMessage);
+    void attach(BullyProcess*);
+    bool broadAliveMessage(AliveMessage p_alive_msg);
+    bool broadCastElectionMessage(ElectionMessage p_election_msg);
 
 private:
     static MessageRouter* instance;
     MessageRouter();
-
-    boost::interprocess::message_queue m_queue;
+    std::vector<BullyProcess*> threadPool;
 };
+
+//MessageRouter* MessageRouter::instance = 0;
+
 
 #endif // MESSAGEQUEUE_H

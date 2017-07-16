@@ -8,14 +8,14 @@ class IdsGenerator
 {
 private:
 
-    static IdsGenerator *sngl_Instance;
+    static IdsGenerator *instance;
     std::map<int,bool> Ids;
 public :
     static IdsGenerator *getInstance()
     {
-        if(!sngl_Instance)
-            sngl_Instance = new IdsGenerator;
-        return sngl_Instance;
+        if(!instance)
+            instance = new IdsGenerator;
+        return instance;
     }
 
     int getUniqueId()
@@ -29,5 +29,7 @@ public :
         return num;
     }
 };
+
+IdsGenerator* IdsGenerator::instance = 0;
 
 #endif // IDSGENERATOR_H
