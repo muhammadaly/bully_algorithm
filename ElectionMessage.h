@@ -7,10 +7,10 @@ class ElectionMessage : public Message
 {
 public:
     ElectionMessage();
-    ElectionMessage(INT p_src_Id,INT p_dst_Id,INT p_data)
+    ElectionMessage(INT p_src_Id,INT p_data)
     {
         m_src  = p_src_Id ;
-        m_dst = p_dst_Id;
+        m_dst = -1;
         m_data    = p_data;
     }
 private:
