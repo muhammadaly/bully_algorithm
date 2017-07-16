@@ -1,7 +1,11 @@
 #include "BullyProcess.h"
 #include "IdsGenerator.h"
-#include <iostream>
 #include <time.h>
+#include <unistd.h>
+#include "MessageRouter.h"
+#include <boost/interprocess/ipc/message_queue.hpp>
+#include <iostream>
+#include <vector>
 
 BullyProcess::BullyProcess():
     StateMachine(ST_MAX_STATES)
@@ -9,27 +13,29 @@ BullyProcess::BullyProcess():
     m_Id = IdsGenerator::getInstance()->getUniqueId();
     m_master_Id = m_Id;
     m_q_name = "q#" + std::to_string(m_Id);
+    m_stop = false;
 }
 
 void BullyProcess::stop()
 {
+    m_stop = true;
     BEGIN_TRANSITION_MAP                                               // - Current State -
-        TRANSITION_MAP_ENTRY (EVENT_IGNORED)                           // ST_START
-        TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_IDLE
-        TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_ELECTION
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
-    END_TRANSITION_MAP(NULL)
+            TRANSITION_MAP_ENTRY (EVENT_IGNORED)                           // ST_START
+            TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_IDLE
+            TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_ELECTION
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+            END_TRANSITION_MAP(NULL)
 }
 
 void BullyProcess::start()
 {
-    m_thread = std::thread(&BullyProcess::Idle,this);
+    //    m_thread = std::thread(&BullyProcess::Idle,this);
     BEGIN_TRANSITION_MAP                                               // - Current State -
-        TRANSITION_MAP_ENTRY (ST_IDLE)                                 // ST_START
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_IDLE
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_ELECTION
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
-    END_TRANSITION_MAP(NULL)
+            TRANSITION_MAP_ENTRY (ST_IDLE)                                 // ST_START
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_IDLE
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_ELECTION
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+            END_TRANSITION_MAP(NULL)
 }
 
 void BullyProcess::updateElection(ElectionMessage msg)
@@ -37,21 +43,21 @@ void BullyProcess::updateElection(ElectionMessage msg)
     if(msg.m_data > m_master_Id)
         m_master_Id = msg.m_data;
     BEGIN_TRANSITION_MAP                                               // - Current State -
-        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_START
-        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_IDLE
-        TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_ELECTION
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
-    END_TRANSITION_MAP(NULL)
+            TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_START
+            TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_IDLE
+            TRANSITION_MAP_ENTRY (ST_ELECTION)                             // ST_ELECTION
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+            END_TRANSITION_MAP(NULL)
 }
 
 void BullyProcess::updateAlive(AliveMessage msg)
 {
     BEGIN_TRANSITION_MAP                                           // - Current State -
-        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_START
-        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_IDLE
-        TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_ELECTION
-        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                       // ST_STOP
-    END_TRANSITION_MAP(NULL)
+            TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_START
+            TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_IDLE
+            TRANSITION_MAP_ENTRY (ST_IDLE)                             // ST_ELECTION
+            TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                       // ST_STOP
+            END_TRANSITION_MAP(NULL)
 }
 
 STATE_DEFINE(BullyProcess, Start, NoEventData)
@@ -65,21 +71,45 @@ STATE_DEFINE(BullyProcess, Stop, NoEventData)
 }
 STATE_DEFINE(BullyProcess, Idle, NoEventData)
 {
-    bool MasterAlive = false;
-    do
+    if(AmITheMaster())
     {
-        std::cout << "I'm a live #" << std::to_string(m_Id) << std::endl;
-        MasterAlive = true;
+        while(!m_stop)
+        {
+            AliveMessage m(m_Id);
+            while(!MessageRouter::getInstance()->broadAliveMessage(m));
+            usleep((unsigned int)DURATION);
+        }
+        InternalEvent(ST_STOP);
     }
-    while(MasterAlive);
-    InternalEvent(ST_ELECTION);
+    else
+    {
+        bool MasterAlive = true;
+        int numberOfIteration = 10, i=0;
+        do
+        {
+            std::cout << "I'm a live #" << std::to_string(m_Id) << std::endl;
+            boost::interprocess::message_queue mq(
+                        boost::interprocess::open_only,
+                        m_q_name.c_str());
+            boost::interprocess::message_queue::size_type recvd_size;
+            AliveMessage msg;
+            unsigned int priority;
+            mq.receive(&msg, sizeof(msg), recvd_size, priority);
+            if(i++ > numberOfIteration)
+                MasterAlive = false;
+            usleep(((unsigned int)DURATION/numberOfIteration));
+        }
+        while(MasterAlive);
+        InternalEvent(ST_ELECTION);
+    }
 }
 
 STATE_DEFINE(BullyProcess, Election,NoEventData)
 {
     m_master_Id = m_Id;
+    std::cout << "Election Start #" << std::endl;
     // broadcast my_id
-    startListen();
+    //    startListen();
 
     InternalEvent(ST_IDLE);
 }

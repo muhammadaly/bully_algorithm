@@ -22,7 +22,4 @@ private:
     std::vector<BullyProcess*> threadPool;
 };
 
-//MessageRouter* MessageRouter::instance = 0;
-
-
 #endif // MESSAGEQUEUE_H

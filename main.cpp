@@ -1,8 +1,10 @@
-#include <QCoreApplication>
+#include "BullyProcess.h"
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
-
-    return a.exec();
+    BullyProcess b ;
+    b.start();
+    int x ;
+    std::cin >> x;
 }

@@ -6,7 +6,10 @@
 class AliveMessage : public Message
 {
 public:
-    AliveMessage();
+    AliveMessage()
+    {
+        m_data = std::time(NULL);
+    }
     AliveMessage(INT p_src_Id)
     {
         m_src  = p_src_Id ;
