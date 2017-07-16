@@ -9,6 +9,36 @@ BullyProcess::BullyProcess():
     m_Id = IdsGenerator::getInstance()->getUniqueId();
 }
 
+void BullyProcess::stop()
+{
+    BEGIN_TRANSITION_MAP                                               // - Current State -
+        TRANSITION_MAP_ENTRY (EVENT_IGNORED)                           // ST_START
+        TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_IDLE
+        TRANSITION_MAP_ENTRY (ST_STOP)                                 // ST_ELECTION
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+    END_TRANSITION_MAP(NULL)
+}
+
+void BullyProcess::start()
+{
+    m_thread = std::thread(&BullyProcess::Idle,this);
+    BEGIN_TRANSITION_MAP                                               // - Current State -
+        TRANSITION_MAP_ENTRY (ST_IDLE)                                 // ST_START
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_IDLE
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_ELECTION
+        TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)                           // ST_STOP
+    END_TRANSITION_MAP(NULL)
+}
+
+STATE_DEFINE(BullyProcess, Start, NoEventData)
+{
+    std::cout << "Starting .. " << std::endl;
+}
+
+STATE_DEFINE(BullyProcess, Stop, NoEventData)
+{
+    if(m_thread.joinable()) m_thread.join();
+}
 STATE_DEFINE(BullyProcess, Idle, NoEventData)
 {
     bool MasterAlive = false;
@@ -23,7 +53,7 @@ STATE_DEFINE(BullyProcess, Idle, NoEventData)
 
 STATE_DEFINE(BullyProcess, Election,NoEventData)
 {
-    master_Id = m_Id;
+    m_master_Id = m_Id;
     // broadcast my_id
     startListen();
 
