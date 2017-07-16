@@ -15,7 +15,8 @@ SOURCES += main.cpp \
     Fault.cpp \
     idsgenerator.cpp \
     StateMachine.cpp \
-    stdafx.cpp
+    stdafx.cpp \
+    messagequeue.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -36,4 +37,10 @@ HEADERS += \
     idsgenerator.h \
     StateMachine.h \
     stdafx.h \
-    targetver.h
+    targetver.h \
+    electionmessage.h \
+    Message.h \
+    messagequeue.h
+
+DISTFILES += \
+    README.md
