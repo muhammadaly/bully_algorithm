@@ -1,4 +1,5 @@
 #include "MessageRouter.h"
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 MessageRouter* MessageRouter::instance = NULL;
 
@@ -21,10 +22,26 @@ MessageRouter::MessageRouter()
 bool MessageRouter::broadCastElectionMessage(ElectionMessage p_election_msg)
 {
     for(auto thread : threadPool)
-        thread->updateElection(p_election_msg);
+    {
+        boost::interprocess::message_queue mq
+                 (boost::interprocess::open_only
+                 ,thread->getElectionQName().c_str()
+                 );
+        mq.send(&p_election_msg, sizeof(p_election_msg), 0);
+
+    }
+    return true;
 }
 bool MessageRouter::broadAliveMessage(AliveMessage p_alive_msg)
 {
     for(auto thread : threadPool)
-        thread->updateAlive(p_alive_msg);
+    {
+        boost::interprocess::message_queue mq
+                 (boost::interprocess::open_only
+                 ,thread->getAliveQName().c_str()
+                 );
+        mq.send(&p_alive_msg, sizeof(p_alive_msg), 0);
+
+    }
+    return true;
 }

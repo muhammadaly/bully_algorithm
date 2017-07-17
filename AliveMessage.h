@@ -8,14 +8,14 @@ class AliveMessage : public Message
 public:
     AliveMessage()
     {
-        m_data = std::time(NULL);
+        m_src = -1;
+        m_dst = -1;
     }
     AliveMessage(INT p_src_Id)
     {
         m_src  = p_src_Id ;
-        m_data    = time(NULL);
+        m_dst = -1;
     }
-    time_t  m_data;
 };
 
 #endif // ALIVEMESSAGE_H

@@ -6,14 +6,9 @@
 #include "AliveMessage.h"
 #include "time.h"
 
-#define DURATION  1000000
-
-//class BullyProcessData : public EventData
-//{
-//public:
-//    INT id;
-//};
-
+#define DURATION  1000000 // 10000 seconds
+#define DELAY 3000 // 30 seconds
+#define WAITING_DELAY 3000 // 30 seconds
 class BullyProcess : public StateMachine
 {
 public:
@@ -22,12 +17,14 @@ public:
     void start();
     void updateElection(ElectionMessage);
     void updateAlive(AliveMessage);
+    std::string getElectionQName() const;
+    std::string getAliveQName() const;
 
 private:
     INT m_Id;
     INT m_master_Id;
     std::thread m_thread;
-    std::string m_q_name;
+    std::string m_Eq_name,m_Aq_name;
     std::time_t m_last_time;
     bool m_stop;
 
@@ -57,7 +54,6 @@ private:
         STATE_MAP_ENTRY(&Stop)
     END_STATE_MAP
 
-    void startListen();
     bool AmITheMaster(){return ( m_master_Id == m_Id);}
 };
 

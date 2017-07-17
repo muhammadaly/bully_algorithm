@@ -1,10 +1,11 @@
-#include "BullyProcess.h"
+#include "ProcessFactory.h"
 #include <iostream>
 
 int main(int argc, char *argv[])
 {
-    BullyProcess b ;
-    b.start();
+    ProcessFactory f;
+    f.createNewProcess();
+    f.createNewProcess();
     int x ;
     std::cin >> x;
 }
