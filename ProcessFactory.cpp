@@ -2,7 +2,6 @@
 
 ProcessFactory::ProcessFactory()
 {
-
 }
 
 void ProcessFactory::createNewProcess()

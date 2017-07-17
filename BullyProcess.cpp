@@ -73,6 +73,7 @@ STATE_DEFINE(BullyProcess, Idle, NoEventData)
     {
         while(!m_stop)
         {
+            std::cout << "I'm a live #" << std::to_string(m_Id) << " Master" << std::endl;
             AliveMessage m(m_Id);
             while(!MessageRouter::getInstance()->broadAliveMessage(m));
             usleep((unsigned int)DURATION);
